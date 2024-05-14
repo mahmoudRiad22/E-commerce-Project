@@ -11,6 +11,8 @@ import { AssetServerPlugin } from '@vendure/asset-server-plugin';
 import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
 import 'dotenv/config';
 import path from 'path';
+// import { VendureConfig } from '@vendure/core';
+import { customShippingCalculator } from './custom-shippin-calculator';
 // import { StripePaymentPlugin } from './plugins/stripe-payment/stripe-payment.plugin';
 
 const IS_DEV = process.env.APP_ENV === 'dev';
@@ -96,20 +98,23 @@ export const config: VendureConfig =
         }),
         StripePlugin.init({
             // // storeCustomersInStripe: true,
-            // metadata: async (injector, ctx, order) => {
-            //     const hydrator = injector.get(EntityHydrator);
-            //     await hydrator.hydrate(ctx, order, { relations: ['customer'] });
-            //     return {
-            //       description: `Order #${order.code} for ${order.customer!.emailAddress}`
-            //     }
-            // },
-            // paymentIntentCreateParams: (injector, ctx, order) => {
-            //     return {
-            //       description: `Order #${order.code} for ${order.customer?.emailAddress}`
-            //   }
-            // }
+            metadata: async (injector, ctx, order) => {
+                const hydrator = injector.get(EntityHydrator);
+                await hydrator.hydrate(ctx, order, { relations: ['customer'] });
+                return {
+                  description: `Order #${order.code} for ${order.customer!.emailAddress}`
+                }
+            },
+            paymentIntentCreateParams: (injector, ctx, order) => {
+                return {
+                  description: `Order #${order.code} for ${order.customer?.emailAddress}`
+              }
+            }
             
         }),
 
     ],
+    shippingOptions: {
+        shippingCalculators: [customShippingCalculator],
+    },
 };
